@@ -196,7 +196,7 @@ public class BufferedRecords {
     int[] batchStatus = updatePreparedStatement.executeBatch();
     for (int updateCount : batchStatus) {
       if (updateCount == Statement.EXECUTE_FAILED) {
-        if(config.dropInvalidRecordMode){
+        if (config.dropInvalidRecordMode) {
           connection.rollback();
           retryUpdateWithValidRecords();
           return;
@@ -207,11 +207,10 @@ public class BufferedRecords {
     }
   }
 
-  private void retryUpdateWithValidRecords() throws SQLException{
-    final SchemaPair schemaPair = new SchemaPair(keySchema, valueSchema);
+  private void retryUpdateWithValidRecords() throws SQLException {
     for (SinkRecord record : records) {
       if (isValidRecordForUpdate(record)) {
-        executeUpdateForRecord(record, schemaPair);
+        executeUpdateForRecord(record);
       }
     }
   }
@@ -220,7 +219,7 @@ public class BufferedRecords {
     return nonNull(record.value()) || isNull(deleteStatementBinder);
   }
 
-  private void executeUpdateForRecord(SinkRecord record, SchemaPair schemaPair) throws SQLException {
+  private void executeUpdateForRecord(SinkRecord record) throws SQLException {
     updatePreparedStatement.clearParameters();
     updateStatementBinder.bindRecord(record);
     boolean status = updatePreparedStatement.execute();
