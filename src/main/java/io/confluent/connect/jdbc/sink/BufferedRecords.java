@@ -221,17 +221,8 @@ public class BufferedRecords {
   }
 
   private void executeUpdateForRecord(SinkRecord record, SchemaPair schemaPair) throws SQLException {
-    updatePreparedStatement = dbDialect.createPreparedStatement(connection, getInsertSql());
-    updateStatementBinder = dbDialect.statementBinder(
-            updatePreparedStatement,
-            config.pkMode,
-            schemaPair,
-            fieldsMetadata,
-            dbStructure.tableDefinition(connection, tableId),
-            config.insertMode
-    );
+    updatePreparedStatement.clearParameters();
     updateStatementBinder.bindRecord(record);
-
     boolean status = updatePreparedStatement.execute();
     if (!status) {
       log.info("UPDATE RECORD FAIL: " + record);
