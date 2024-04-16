@@ -596,6 +596,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final boolean useHoldlockInMerge;
 
   public final boolean trimSensitiveLogsEnabled;
+  public final boolean dropInvalidRecordMode;
 
   public JdbcSinkConfig(Map<?, ?> props) {
     super(CONFIG_DEF, props);
@@ -625,6 +626,7 @@ public class JdbcSinkConfig extends AbstractConfig {
         ? TimeZone.getTimeZone(ZoneOffset.UTC) : timeZone;
     useHoldlockInMerge = getBoolean(MSSQL_USE_MERGE_HOLDLOCK);
     trimSensitiveLogsEnabled = getBoolean(TRIM_SENSITIVE_LOG_ENABLED);
+    dropInvalidRecordMode = getBoolean(DROP_INVALID_RECORD_MODE);
     if (deleteEnabled && pkMode != PrimaryKeyMode.RECORD_KEY) {
       throw new ConfigException(
           "Primary key mode must be 'record_key' when delete support is enabled");

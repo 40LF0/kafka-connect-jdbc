@@ -196,9 +196,45 @@ public class BufferedRecords {
     int[] batchStatus = updatePreparedStatement.executeBatch();
     for (int updateCount : batchStatus) {
       if (updateCount == Statement.EXECUTE_FAILED) {
+        if(config.dropInvalidRecordMode){
+          connection.rollback();
+          retryUpdateWithValidRecords();
+          return;
+        }
         throw new BatchUpdateException(
                 "Execution failed for part of the batch update", batchStatus);
       }
+    }
+  }
+
+  private void retryUpdateWithValidRecords() throws SQLException{
+    final SchemaPair schemaPair = new SchemaPair(keySchema, valueSchema);
+    for (SinkRecord record : records) {
+      if (isValidRecordForUpdate(record)) {
+        executeUpdateForRecord(record, schemaPair);
+      }
+    }
+  }
+
+  private boolean isValidRecordForUpdate(SinkRecord record) {
+    return nonNull(record.value()) || isNull(deleteStatementBinder);
+  }
+
+  private void executeUpdateForRecord(SinkRecord record, SchemaPair schemaPair) throws SQLException {
+    updatePreparedStatement = dbDialect.createPreparedStatement(connection, getInsertSql());
+    updateStatementBinder = dbDialect.statementBinder(
+            updatePreparedStatement,
+            config.pkMode,
+            schemaPair,
+            fieldsMetadata,
+            dbStructure.tableDefinition(connection, tableId),
+            config.insertMode
+    );
+    updateStatementBinder.bindRecord(record);
+
+    boolean status = updatePreparedStatement.execute();
+    if (!status) {
+      log.info("UPDATE RECORD FAIL: " + record);
     }
   }
 
