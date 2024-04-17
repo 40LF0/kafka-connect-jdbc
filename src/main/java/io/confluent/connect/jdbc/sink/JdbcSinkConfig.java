@@ -224,6 +224,8 @@ public class JdbcSinkConfig extends AbstractConfig {
   private static final String DML_GROUP = "DML Support";
   private static final String RETRIES_GROUP = "Retries";
 
+  private static final String UTILITY_GROUP = "Utility";
+
   public static final String DIALECT_NAME_CONFIG = "dialect.name";
   private static final String DIALECT_NAME_DISPLAY = "Database Dialect";
   public static final String DIALECT_NAME_DEFAULT = "";
@@ -287,6 +289,13 @@ public class JdbcSinkConfig extends AbstractConfig {
       + "Note that it is only applicable to SQL Server.";
   private static final String MSSQL_USE_MERGE_HOLDLOCK_DISPLAY =
       "SQL Server - Use HOLDLOCK in MERGE";
+
+  public static final String DROP_INVALID_RECORD_MODE = "drop.invalid.record.mode";
+  private static final String DROP_INVALID_RECORD_MODE_DEFAULT = "false";
+  private static final String DROP_INVALID_RECORD_MODE_DOC =
+      "Specifies whether to drop invalid records.";
+  private static final String DROP_INVALID_RECORD_MODE_DISPLAY =
+      "Drop Invalid Record Mode";
 
   public static final ConfigDef CONFIG_DEF = new ConfigDef()
         // Connection
@@ -544,6 +553,17 @@ public class JdbcSinkConfig extends AbstractConfig {
             2,
             ConfigDef.Width.SHORT,
             RETRY_BACKOFF_MS_DISPLAY
+        )// Utility
+        .define(
+                DROP_INVALID_RECORD_MODE,
+                ConfigDef.Type.BOOLEAN,
+                DROP_INVALID_RECORD_MODE_DEFAULT,
+                ConfigDef.Importance.MEDIUM,
+                DROP_INVALID_RECORD_MODE_DOC,
+                UTILITY_GROUP,
+                1,
+                ConfigDef.Width.SHORT,
+                DROP_INVALID_RECORD_MODE_DISPLAY
         )
         .defineInternal(
             TRIM_SENSITIVE_LOG_ENABLED,
@@ -576,6 +596,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final boolean useHoldlockInMerge;
 
   public final boolean trimSensitiveLogsEnabled;
+  public final boolean dropInvalidRecordMode;
 
   public JdbcSinkConfig(Map<?, ?> props) {
     super(CONFIG_DEF, props);
@@ -605,6 +626,7 @@ public class JdbcSinkConfig extends AbstractConfig {
         ? TimeZone.getTimeZone(ZoneOffset.UTC) : timeZone;
     useHoldlockInMerge = getBoolean(MSSQL_USE_MERGE_HOLDLOCK);
     trimSensitiveLogsEnabled = getBoolean(TRIM_SENSITIVE_LOG_ENABLED);
+    dropInvalidRecordMode = getBoolean(DROP_INVALID_RECORD_MODE);
     if (deleteEnabled && pkMode != PrimaryKeyMode.RECORD_KEY) {
       throw new ConfigException(
           "Primary key mode must be 'record_key' when delete support is enabled");

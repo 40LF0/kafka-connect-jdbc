@@ -193,13 +193,56 @@ public class BufferedRecords {
   }
 
   private void executeUpdates() throws SQLException {
-    int[] batchStatus = updatePreparedStatement.executeBatch();
-    for (int updateCount : batchStatus) {
-      if (updateCount == Statement.EXECUTE_FAILED) {
-        throw new BatchUpdateException(
-                "Execution failed for part of the batch update", batchStatus);
+    try {
+      int[] batchStatus = updatePreparedStatement.executeBatch();
+      for (int updateCount : batchStatus) {
+        if (updateCount == Statement.EXECUTE_FAILED) {
+          throw new BatchUpdateException(
+                  "Execution failed for part of the batch update", batchStatus);
+        }
       }
+    } catch (BatchUpdateException e) {
+      if (config.dropInvalidRecordMode) {
+        connection.rollback();
+        retryUpdateWithValidRecords();
+        return;
+      }
+      throw new BatchUpdateException();
     }
+
+  }
+
+  private void retryUpdateWithValidRecords() throws SQLException {
+    try {
+      for (SinkRecord record : records) {
+        if (isValidRecordForUpdate(record)) {
+          executeUpdateForRecord(record);
+        }
+      }
+    } catch (SQLException e) {
+      connection.rollback();
+      throw e;
+    }
+
+  }
+
+  private boolean isValidRecordForUpdate(SinkRecord record) {
+    return nonNull(record.value()) || isNull(deleteStatementBinder);
+  }
+
+  private void executeUpdateForRecord(SinkRecord record) throws SQLException {
+    updatePreparedStatement.clearParameters();
+    updateStatementBinder.bindRecord(record);
+    try {
+      boolean status = updatePreparedStatement.execute();
+      if (!status) {
+        throw new SQLException();
+      }
+    } catch (SQLException e) {
+      log.info("[UPDATE RECORD FAIL] " + "RECORD INFO: " + record);
+      log.info("[UPDATE RECORD FAIL] " + "REASON: " + e.getMessage());
+    }
+
   }
 
   private void executeDeletes() throws SQLException {
