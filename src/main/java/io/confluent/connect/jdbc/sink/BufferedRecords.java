@@ -234,10 +234,7 @@ public class BufferedRecords {
     updatePreparedStatement.clearParameters();
     updateStatementBinder.bindRecord(record);
     try {
-      boolean status = updatePreparedStatement.execute();
-      if (!status) {
-        throw new SQLException();
-      }
+      updatePreparedStatement.execute();
     } catch (SQLException e) {
       log.info("[UPDATE RECORD FAIL] " + "RECORD INFO: " + record);
       log.info("[UPDATE RECORD FAIL] " + "REASON: " + e.getMessage());
