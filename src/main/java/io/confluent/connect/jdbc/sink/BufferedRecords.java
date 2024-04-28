@@ -204,10 +204,11 @@ public class BufferedRecords {
     } catch (BatchUpdateException e) {
       if (config.dropInvalidRecordMode) {
         connection.rollback();
+        log.info("[UPDATE BATCH RECORD FAIL] update valid records and drop invalid record");
         retryUpdateWithValidRecords();
         return;
       }
-      throw new BatchUpdateException();
+      throw e;
     }
 
   }
@@ -236,8 +237,8 @@ public class BufferedRecords {
     try {
       updatePreparedStatement.execute();
     } catch (SQLException e) {
-      log.info("[UPDATE RECORD FAIL] " + "RECORD INFO: " + record);
-      log.info("[UPDATE RECORD FAIL] " + "REASON: " + e.getMessage());
+      log.info("[DROP INVALID RECORD] " + "RECORD INFO: " + record);
+      log.info("[DROP INVALID RECORD] " + "REASON: " + e.getMessage());
     }
 
   }
