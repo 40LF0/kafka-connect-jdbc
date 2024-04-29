@@ -237,10 +237,9 @@ public class BufferedRecords {
     try {
       updatePreparedStatement.execute();
     } catch (SQLException e) {
-      log.info("[DROP INVALID RECORD] " + "RECORD INFO: " + record);
-      log.info("[DROP INVALID RECORD] " + "REASON: " + e.getMessage());
+      log.info("[DROP INVALID RECORD] RECORD INFO: {}", record);
+      log.info("[DROP INVALID RECORD] REASON: {}", e.getMessage());
     }
-
   }
 
   private void executeDeletes() throws SQLException {
